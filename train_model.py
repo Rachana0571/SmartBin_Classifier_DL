@@ -80,7 +80,7 @@ class WasteDataset(Dataset):
 
 # Load dataset
 print("Loading dataset...")
-dataset_dir = r'C:\Users\User\Downloads\dataset\images\images'
+dataset_dir = r'./dataset'
 
 if not os.path.exists(dataset_dir):
     print(f"Error: Dataset directory not found at {dataset_dir}")
