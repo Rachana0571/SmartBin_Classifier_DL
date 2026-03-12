@@ -96,7 +96,8 @@ print("\n" + "="*70)
 print("LOADING DATASET FOR EVALUATION")
 print("="*70)
 
-dataset_dir = r'C:\Users\User\Downloads\dataset\images\images'
+# Use relative path for cross-platform compatibility
+dataset_dir = os.path.join('..', 'dataset', 'images', 'images')
 
 if not os.path.exists(dataset_dir):
     print(f"Error: Dataset directory not found at {dataset_dir}")

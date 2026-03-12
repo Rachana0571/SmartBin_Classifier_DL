@@ -6,8 +6,8 @@ import torch
 from torchvision import models
 import os
 
-# Create model directory if it doesn't exist
-model_dir = r'C:\Users\User\Downloads\Smart-Bin-Classifier-Using-CNN-main\model'
+# Create model directory if it doesn't exist (relative path for portability)
+model_dir = os.path.join(os.path.dirname(__file__), 'model')
 os.makedirs(model_dir, exist_ok=True)
 
 # Create VGG16 model with 4 output classes
