@@ -1,12 +1,26 @@
-streamlit>=1.28.0,<2.0.0
-torch>=2.0.0
-torchvision>=0.15.0
-ultralytics
-numpy
-pandas
-scikit-learn
-pillow
-opencv-python-headless
-altair
-matplotlib
-requests
+# Core Deep Learning & Model Training
+torch==2.6.0
+torchvision==0.21.0
+
+# Data Processing & Machine Learning
+numpy==2.2.3
+pandas==2.2.3
+scikit-learn>=1.0.0
+
+# Image Processing
+pillow==11.1.0
+opencv-python>=4.8.0
+
+# Web Framework (Streamlit)
+streamlit==1.42.0
+altair==5.5.0
+
+# Visualization
+matplotlib>=3.7.0
+
+# Utilities
+requests==2.32.3
+certifi==2025.1.31
+urllib3==2.3.0
+python-dateutil==2.9.0.post0
+pytz==2025.1
