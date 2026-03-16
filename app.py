@@ -31,8 +31,8 @@ st.title("♻️ Waste Classification CNN Convolutional Neural Network")
 st.sidebar.header("Choose Mode")
 mode = st.sidebar.radio("Select classification mode:", [
     "Upload/Capture Image",
-    "Real-Time Webcam",
-    "Object Detection",
+    # "Real-Time Webcam",
+    # "Object Detection",
     "Real-Time Detection & Classification"
 ])
 
@@ -63,103 +63,103 @@ if mode == "Upload/Capture Image":
             st.error(f"❌ Error processing the camera image: {e}")
 
 # ------------------- Real-Time Webcam -------------------
-elif mode == "Real-Time Webcam":
-    st.write("## Real-Time Waste Detection and Classification")
+# elif mode == "Real-Time Webcam":
+#     st.write("## Real-Time Waste Detection and Classification")
 
-    start = st.button("▶️ Start Camera")
-    stop = st.button("⏹️ Stop Camera")
+#     start = st.button("▶️ Start Camera")
+#     stop = st.button("⏹️ Stop Camera")
 
-    stframe = st.empty()
-    class_placeholder = st.empty()
+#     stframe = st.empty()
+#     class_placeholder = st.empty()
 
-    if "run_webcam" not in st.session_state:
-        st.session_state.run_webcam = False
+#     if "run_webcam" not in st.session_state:
+#         st.session_state.run_webcam = False
 
-    if start:
-        st.session_state.run_webcam = True
-    if stop:
-        st.session_state.run_webcam = False
+#     if start:
+#         st.session_state.run_webcam = True
+#     if stop:
+#         st.session_state.run_webcam = False
 
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        st.error("Cannot open camera")
-    else:
-        while st.session_state.run_webcam:
-            ret, frame = cap.read()
-            if not ret:
-                st.error("Failed to grab frame")
-                break
+#     cap = cv2.VideoCapture(0)
+#     if not cap.isOpened():
+#         st.error("Cannot open camera")
+#     else:
+#         while st.session_state.run_webcam:
+#             ret, frame = cap.read()
+#             if not ret:
+#                 st.error("Failed to grab frame")
+#                 break
 
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            pil_image = Image.fromarray(rgb_frame)
+#             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#             pil_image = Image.fromarray(rgb_frame)
 
-            # Run detection
-            results = yolo_model(pil_image)
-            boxes = results[0].boxes.xyxy.cpu().numpy()
-            classes = results[0].boxes.cls.cpu().numpy().astype(int)
-            class_names = results[0].names
+#             # Run detection
+#             results = yolo_model(pil_image)
+#             boxes = results[0].boxes.xyxy.cpu().numpy()
+#             classes = results[0].boxes.cls.cpu().numpy().astype(int)
+#             class_names = results[0].names
 
-            for box, cls in zip(boxes, classes):
-                x_min, y_min, x_max, y_max = box.astype(int)
-                label = class_names[cls]
-                # Crop detected object for CNN classification
-                cropped_obj = pil_image.crop((x_min, y_min, x_max, y_max))
-                obj_class = predict_image_class(cropped_obj, model)
-                combined_label = f"{label} ({obj_class})"
-                color = (0, 255, 0) if obj_class == "Biodegradable" else (0, 0, 255)
-                cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), color, 2)
-                cv2.putText(frame, combined_label, (x_min, y_min - 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+#             for box, cls in zip(boxes, classes):
+#                 x_min, y_min, x_max, y_max = box.astype(int)
+#                 label = class_names[cls]
+#                 # Crop detected object for CNN classification
+#                 cropped_obj = pil_image.crop((x_min, y_min, x_max, y_max))
+#                 obj_class = predict_image_class(cropped_obj, model)
+#                 combined_label = f"{label} ({obj_class})"
+#                 color = (0, 255, 0) if obj_class == "Biodegradable" else (0, 0, 255)
+#                 cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), color, 2)
+#                 cv2.putText(frame, combined_label, (x_min, y_min - 5),
+#                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
 
-            # Classification
-            predicted_class = predict_image_class(pil_image, model)
-            cv2.putText(frame, f"Class: {predicted_class}", (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+#             # Classification
+        #     predicted_class = predict_image_class(pil_image, model)
+        #     cv2.putText(frame, f"Class: {predicted_class}", (10, 30),
+        #                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-            # Display frame
-            stframe.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), channels="RGB")
-            class_placeholder.success(f"Detected Class: {predicted_class}")
+        #     # Display frame
+        #     stframe.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), channels="RGB")
+        #     class_placeholder.success(f"Detected Class: {predicted_class}")
 
-            time.sleep(0.05)
+        #     time.sleep(0.05)
 
-        cap.release()
+        # cap.release()
 # ------------------- Object Detection -------------------
-elif mode == "Object Detection":
-    st.write("## Object Detection")
-    uploaded_image = st.file_uploader("📤 Upload an image for detection", type=['jpg', 'jpeg', 'png'])
-    camera_image = st.camera_input("📷 Take a photo for detection")
+# elif mode == "Object Detection":
+#     st.write("## Object Detection")
+#     uploaded_image = st.file_uploader("📤 Upload an image for detection", type=['jpg', 'jpeg', 'png'])
+#     camera_image = st.camera_input("📷 Take a photo for detection")
 
-    def run_object_detection(image):
-        try:
-            results = yolo_model(image)
-            boxes = results[0].boxes.xyxy.cpu().numpy()
-            classes = results[0].boxes.cls.cpu().numpy().astype(int)
-            class_names = results[0].names
-            img_np = np.array(image)
-            for box, cls in zip(boxes, classes):
-                x_min, y_min, x_max, y_max = box.astype(int)
-                label = class_names[cls]
-                color = (0,255,0) if label == "Biodegradable" else (0,0,255)
-                cv2.rectangle(img_np, (x_min, y_min), (x_max, y_max), color, 2)
-                cv2.putText(img_np, label, (x_min, y_min-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
-            return img_np
-        except Exception as e:
-            st.error(f"Detection error: {e}")
-            return None
+#     def run_object_detection(image):
+#         try:
+#             results = yolo_model(image)
+#             boxes = results[0].boxes.xyxy.cpu().numpy()
+#             classes = results[0].boxes.cls.cpu().numpy().astype(int)
+#             class_names = results[0].names
+#             img_np = np.array(image)
+#             for box, cls in zip(boxes, classes):
+#                 x_min, y_min, x_max, y_max = box.astype(int)
+#                 label = class_names[cls]
+#                 color = (0,255,0) if label == "Biodegradable" else (0,0,255)
+#                 cv2.rectangle(img_np, (x_min, y_min), (x_max, y_max), color, 2)
+#                 cv2.putText(img_np, label, (x_min, y_min-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+#             return img_np
+#         except Exception as e:
+#             st.error(f"Detection error: {e}")
+#             return None
 
-    if uploaded_image:
-        image = Image.open(uploaded_image).convert('RGB')
-        st.image(image, caption="Original Image", use_container_width=True)
-        detected_img = run_object_detection(image)
-        if detected_img is not None:
-            st.image(detected_img, caption="Detected Objects", use_container_width=True)
+#     if uploaded_image:
+#         image = Image.open(uploaded_image).convert('RGB')
+#         st.image(image, caption="Original Image", use_container_width=True)
+#         detected_img = run_object_detection(image)
+#         if detected_img is not None:
+#             st.image(detected_img, caption="Detected Objects", use_container_width=True)
 
-    if camera_image is not None:
-        image = Image.open(camera_image).convert('RGB')
-        st.image(image, caption="Captured Image", use_container_width=True)
-        detected_img = run_object_detection(image)
-        if detected_img is not None:
-            st.image(detected_img, caption="Detected Objects", use_container_width=True)
+#     if camera_image is not None:
+#         image = Image.open(camera_image).convert('RGB')
+#         st.image(image, caption="Captured Image", use_container_width=True)
+#         detected_img = run_object_detection(image)
+#         if detected_img is not None:
+#             st.image(detected_img, caption="Detected Objects", use_container_width=True)
 
 # ------------------- Real-Time Detection & Classification -------------------
 elif mode == "Real-Time Detection & Classification":

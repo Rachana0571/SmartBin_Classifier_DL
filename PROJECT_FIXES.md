@@ -154,7 +154,7 @@ Your project is now **production-ready** for faculty presentation:
    ```bash
    pip install -r requirements.txt
    streamlit run app.py
-   ```
+   ``` 
 
 2. **Prepare demo data**: Have sample waste images ready for live demo
 
