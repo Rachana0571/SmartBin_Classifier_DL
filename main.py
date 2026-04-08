@@ -2,25 +2,38 @@ import torch
 from torchvision import models, transforms
 from PIL import Image
 import os
+import urllib.request
 
 # Load model function
 def load_model():
-    model_path = './model/40.pth'
+    # Try to load best_improved.pth first (90.67% accuracy)
+    model_path_best = './model/best_improved.pth'
+    # Fallback to 40.pth
+    model_path_fallback = './model/40.pth'
     
     # Create model with 4 output classes
     model = models.vgg16(pretrained=False)
     model.classifier[6] = torch.nn.Linear(4096, 4)  # 4 output classes
     
+    # Try best_improved.pth first
     try:
-        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+        model.load_state_dict(torch.load(model_path_best, map_location=torch.device('cpu')))
         model.eval()  # Set model to evaluation mode
         return model
     except FileNotFoundError:
-        print(f"⚠️  Model file not found at {model_path}")
+        pass
+    
+    # Try fallback to 40.pth
+    try:
+        model.load_state_dict(torch.load(model_path_fallback, map_location=torch.device('cpu')))
+        model.eval()  # Set model to evaluation mode
+        return model
+    except FileNotFoundError:
+        print(f"⚠️  No trained model found")
         print("💡 Creating base model with pretrained VGG16 weights...")
         print("⏳ Downloading weights (this may take a moment on first run)...")
         
-        # Create base model with pretrained weights
+        # Create base model with pretrained weights - this is the fallback
         try:
             model = models.vgg16(weights=models.VGG16_Weights.DEFAULT)
             model.classifier[6] = torch.nn.Linear(4096, 4)
@@ -28,9 +41,6 @@ def load_model():
             # Create model directory if needed
             os.makedirs('./model', exist_ok=True)
             
-            # Save the model
-            torch.save(model.state_dict(), model_path)
-            print(f"✅ Model saved to {model_path}")
             model.eval()
             return model
         except Exception as e:
