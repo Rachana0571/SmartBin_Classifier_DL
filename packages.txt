@@ -3,4 +3,3 @@ libxext6
 libxrender-dev
 libglib2.0-0
 libgomp1
-libatlas-base-dev
