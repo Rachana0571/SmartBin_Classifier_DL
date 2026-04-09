@@ -3,6 +3,7 @@ from torchvision import models, transforms
 from PIL import Image
 import os
 import urllib.request
+from PIL import ImageOps
 
 # Load model function
 def load_model():
@@ -49,6 +50,12 @@ def load_model():
 
 # Image preprocessing function
 def preprocess_image(image):
+    # Fix image rotation (important for phone uploads)
+    try:
+        image = ImageOps.exif_transpose(image)
+    except:
+        pass  # If no EXIF data, just continue
+    
     transform_test = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
