@@ -1,6 +1,8 @@
 """
-Test BOTH model files to find which one has good accuracy
+Model Comparison Script
+Compares accuracy of available trained models
 """
+
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
@@ -9,6 +11,7 @@ from pathlib import Path
 import os
 import random
 from sklearn.metrics import accuracy_score
+
 
 # Configuration
 DATASET_PATH = '../dataset/images/images'
@@ -57,7 +60,9 @@ transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
+
 def load_test_images():
+    """Load random sample of test images from dataset."""
     image_paths = []
     labels = []
     
@@ -74,13 +79,13 @@ def load_test_images():
         
         label_idx = CLASS_TO_IDX[main_class]
         
-        for subfolder in ['default']:
-            subfolder_path = cat_path / subfolder
-            if subfolder_path.exists():
-                for img_file in list(subfolder_path.glob('*.jpg')) + list(subfolder_path.glob('*.png')):
-                    image_paths.append(str(img_file))
-                    labels.append(label_idx)
+        subfolder_path = cat_path / 'default'
+        if subfolder_path.exists():
+            for img_file in list(subfolder_path.glob('*.jpg')) + list(subfolder_path.glob('*.png')):
+                image_paths.append(str(img_file))
+                labels.append(label_idx)
     
+    # Sample random subset  
     if len(image_paths) > SAMPLE_SIZE:
         sample_indices = random.sample(range(len(image_paths)), SAMPLE_SIZE)
         image_paths = [image_paths[i] for i in sample_indices]
@@ -88,31 +93,30 @@ def load_test_images():
     
     return image_paths, labels
 
-def test_model(model_path, model_name):
-    print(f"\n{'='*70}")
-    print(f"Testing: {model_name}")
-    print(f"{'='*70}\n")
-    
-    device = torch.device('cpu')
+
+def evaluate_model(model_path, model_name, device):
+    """Evaluate single model on test set."""
+    print(f"\nEvaluating: {model_name}")
+    print("-" * 70)
     
     # Load model
-    model = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1)
+    model = models.vgg16(pretrained=False)
     model.classifier[6] = nn.Linear(4096, 4)
     
     try:
         state_dict = torch.load(model_path, map_location=device)
         model.load_state_dict(state_dict)
-        print(f"✅ Model loaded from: {model_path}\n")
+        print(f"Model loaded: {model_path}")
     except Exception as e:
-        print(f"❌ Failed to load: {e}\n")
-        return 0
+        print(f"Error loading model: {e}")
+        return None
     
     model = model.to(device)
     model.eval()
     
     # Load test images
     image_paths, labels = load_test_images()
-    print(f"Testing on {len(image_paths)} images...\n")
+    print(f"Testing on {len(image_paths)} images")
     
     all_preds = []
     all_labels = []
@@ -120,7 +124,7 @@ def test_model(model_path, model_name):
     with torch.no_grad():
         for idx, img_path in enumerate(image_paths):
             if (idx + 1) % 50 == 0:
-                print(f"  Processed {idx + 1}/{len(image_paths)} images")
+                print(f"  Processed {idx + 1}/{len(image_paths)}")
             
             try:
                 image = Image.open(img_path).convert('RGB')
@@ -134,48 +138,49 @@ def test_model(model_path, model_name):
                 pass
     
     accuracy = accuracy_score(all_labels, all_preds) if all_labels else 0
-    
-    print(f"\n✅ ACCURACY: {accuracy*100:.2f}%\n")
+    print(f"Accuracy: {accuracy*100:.2f}%")
     
     return accuracy
 
-# Test both models
-print("\n" + "="*70)
-print("COMPARING MODEL FILES")
-print("="*70)
 
-models_to_test = [
-    ('./model/40.pth', '40.pth (Current)'),
-    ('./model/best_improved.pth', 'best_improved.pth (Previous)'),
-]
-
-results = {}
-for model_path, name in models_to_test:
-    if os.path.exists(model_path):
-        acc = test_model(model_path, name)
-        results[name] = acc
-    else:
-        print(f"❌ {name} NOT FOUND")
-
-# Summary
-print("\n" + "="*70)
-print("SUMMARY")
-print("="*70)
-
-for name, acc in sorted(results.items(), key=lambda x: x[1], reverse=True):
-    status = "🟢 GOOD" if acc >= 0.70 else "🟡 OK" if acc >= 0.60 else "🔴 BAD"
-    print(f"{name:40} → {acc*100:6.2f}% {status}")
-
-# Find best model
-if results:
-    best_model = max(results.items(), key=lambda x: x[1])
-    print(f"\n✅ BEST MODEL: {best_model[0]}")
-    print(f"   Accuracy: {best_model[1]*100:.2f}%")
+def main():
+    """Compare all available models."""
+    print("\n" + "="*70)
+    print("SmartBin - Model Comparison")
+    print("="*70)
     
-    if best_model[1] >= 0.70:
-        print(f"\n✅ This model is PERFECT for your review!")
-        print(f"   Your faculty will be satisfied with {best_model[1]*100:.1f}% accuracy")
-    else:
-        print(f"\n⚠️  Need to improve accuracy")
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Device: {device}\n")
+    
+    models_to_test = [
+        ('./model/best_improved.pth', 'best_improved.pth (90.67% expected)'),
+        ('./model/40.pth', '40.pth (fallback model)'),
+    ]
+    
+    results = {}
+    for model_path, name in models_to_test:
+        if os.path.exists(model_path):
+            acc = evaluate_model(model_path, name, device)
+            if acc is not None:
+                results[name] = acc
+        else:
+            print(f"Skipped: {name} - file not found")
+    
+    # Display summary
+    print("\n" + "="*70)
+    print("Comparison Summary")
+    print("="*70)
+    
+    for name, acc in sorted(results.items(), key=lambda x: x[1], reverse=True):
+        print(f"{name:50} {acc*100:7.2f}%")
+    
+    if results:
+        best_model = max(results.items(), key=lambda x: x[1])
+        print("\n" + "-"*70)
+        print(f"Best Model: {best_model[0]}")
+        print(f"Accuracy: {best_model[1]*100:.2f}%")
+        print("="*70 + "\n")
 
-print("\n" + "="*70 + "\n")
+
+if __name__ == "__main__":
+    main()

@@ -1,6 +1,9 @@
 """
-Fast accuracy evaluation on random sample
+Quick Model Evaluation Script
+Tests model accuracy on a random sample of images from the dataset
+Generates precision, recall, and F1-score metrics
 """
+
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
@@ -10,9 +13,11 @@ import os
 import random
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 
+
 # Configuration
 DATASET_PATH = '../dataset/images/images'
-SAMPLE_SIZE = 500  # Test on 500 images for speed
+SAMPLE_SIZE = 500  # Number of test images
+
 WASTE_CLASS_MAPPING = {
     'aerosol_cans': 'hazardous',
     'aluminum_food_cans': 'non_biodegradable',
@@ -50,6 +55,7 @@ MAIN_CLASSES = ['biodegradable', 'non_biodegradable', 'trash', 'hazardous']
 CLASS_TO_IDX = {cls: idx for idx, cls in enumerate(MAIN_CLASSES)}
 IDX_TO_CLASS = {idx: cls for cls, idx in CLASS_TO_IDX.items()}
 
+# Image transformation pipeline
 transform = transforms.Compose([
     transforms.Resize(256),
     transforms.CenterCrop(224),
@@ -57,17 +63,9 @@ transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-def evaluate_fast():
-    print("\n" + "="*80)
-    print("WASTE CLASSIFICATION - QUICK ACCURACY TEST")
-    print("="*80 + "\n")
-    
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Device: {device}")
-    print(f"Test Sample Size: {SAMPLE_SIZE} images\n")
-    
-    # Load dataset
-    print("Gathering images from dataset...")
+
+def gather_test_images():
+    """Load test images from dataset directory."""
     image_paths = []
     labels = []
     
@@ -84,20 +82,94 @@ def evaluate_fast():
         
         label_idx = CLASS_TO_IDX[main_class]
         
-        for subfolder in ['default']:  # Use only default for speed
-            subfolder_path = cat_path / subfolder
-            if subfolder_path.exists():
-                for img_file in list(subfolder_path.glob('*.jpg')) + list(subfolder_path.glob('*.png')):
-                    image_paths.append(str(img_file))
-                    labels.append((label_idx, category))
+        # Load from default folder
+        subfolder_path = cat_path / 'default'
+        if subfolder_path.exists():
+            for img_file in list(subfolder_path.glob('*.jpg')) + list(subfolder_path.glob('*.png')):
+                image_paths.append(str(img_file))
+                labels.append((label_idx, category))
     
-    # Sample random images
+    # Sample random subset
     if len(image_paths) > SAMPLE_SIZE:
         sample_indices = random.sample(range(len(image_paths)), SAMPLE_SIZE)
         image_paths = [image_paths[i] for i in sample_indices]
         labels = [labels[i] for i in sample_indices]
     
-    print(f"✅ Selected {len(image_paths)} test images\n")
+    return image_paths, labels
+
+
+def evaluate():
+    """Evaluate model on test images."""
+    print("\n" + "="*80)
+    print("SmartBin Model Evaluation")
+    print("="*80 + "\n")
+    
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Device: {device}")
+    print(f"Sample Size: {SAMPLE_SIZE} images\n")
+    
+    # Load model
+    print("Loading model...")
+    model = models.vgg16(pretrained=False)
+    model.classifier[6] = nn.Linear(4096, 4)
+    
+    try:
+        model.load_state_dict(torch.load('./model/best_improved.pth', map_location=device))
+    except:
+        try:
+            model.load_state_dict(torch.load('./model/40.pth', map_location=device))
+        except Exception as e:
+            print(f"Error loading model: {e}")
+            return
+    
+    model = model.to(device)
+    model.eval()
+    print("Model loaded successfully\n")
+    
+    # Gather test images
+    print("Loading test images...")
+    image_paths, labels = gather_test_images()
+    print(f"Testing on {len(image_paths)} images\n")
+    
+    # Run inference
+    all_preds = []
+    all_labels = []
+    
+    with torch.no_grad():
+        for idx, img_path in enumerate(image_paths):
+            if (idx + 1) % 50 == 0:
+                print(f"Processed {idx + 1}/{len(image_paths)} images")
+            
+            try:
+                image = Image.open(img_path).convert('RGB')
+                image_tensor = transform(image).unsqueeze(0).to(device)
+                output = model(image_tensor)
+                pred = torch.argmax(output, dim=1).item()
+                
+                all_preds.append(pred)
+                all_labels.append(labels[idx][0])
+            except:
+                pass
+    
+    # Calculate metrics
+    accuracy = accuracy_score(all_labels, all_preds) if all_labels else 0
+    precision = precision_score(all_labels, all_preds, average='weighted', zero_division=0)
+    recall = recall_score(all_labels, all_preds, average='weighted', zero_division=0)
+    f1 = f1_score(all_labels, all_preds, average='weighted', zero_division=0)
+    
+    # Display results
+    print(f"\n{'='*80}")
+    print("Evaluation Results")
+    print("="*80)
+    print(f"Accuracy:  {accuracy*100:.2f}%")
+    print(f"Precision: {precision*100:.2f}%")
+    print(f"Recall:    {recall*100:.2f}%")
+    print(f"F1-Score:  {f1*100:.2f}%")
+    print("="*80 + "\n")
+
+
+if __name__ == "__main__":
+    evaluate()
     
     # Load model
     print("Loading model...")
