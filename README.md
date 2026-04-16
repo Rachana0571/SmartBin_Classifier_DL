@@ -43,6 +43,36 @@ This application provides an end-to-end solution for waste classification:
   - `real_world/`: Photos in natural conditions
 - **Total Classes**: Mapped to 4 primary categories
 - **Train-Test Split**: 80% training, 20% testing
+- **Size**: ~15,000+ images
+
+### ⚠️ IMPORTANT: Download Dataset Separately
+
+**The dataset is NOT included in this repository** (stored separately for efficiency). Before running training/evaluation, download it:
+
+**Option 1: Using Kaggle CLI**
+```bash
+pip install kaggle
+kaggle datasets download -d alistairking/recyclable-and-household-waste-classification
+unzip recyclable-and-household-waste-classification.zip -d dataset
+```
+
+**Option 2: Manual Download**
+1. Visit: https://www.kaggle.com/datasets/alistairking/recyclable-and-household-waste-classification
+2. Click **Download** button
+3. Extract the ZIP file to create `dataset/` folder in parent directory
+
+### Expected Structure After Download
+```
+parent_folder/
+├── SmartBin_Classifier_DL/     # This project (clone from GitHub)
+├── dataset/                      # Downloaded separately from Kaggle
+│   └── images/
+│       └── images/
+│           ├── aerosol_cans/
+│           ├── aluminum_food_cans/
+│           ├── aluminum_soda_cans/
+│           └── ... (29 more categories)
+```
 
 ---
 
@@ -52,9 +82,11 @@ This application provides an end-to-end solution for waste classification:
 - Python 3.8 or higher
 - pip or conda package manager
 - 2GB+ free disk space (for model & dependencies)
+- Dataset from Kaggle (see Dataset section above)
 
-### Step 1: Clone or Download Repository
+### Step 1: Clone Repository
 ```bash
+git clone https://github.com/Rachana0571/SmartBin_Classifier_DL.git
 cd SmartBin_Classifier_DL
 ```
 
@@ -63,24 +95,8 @@ cd SmartBin_Classifier_DL
 pip install -r requirements.txt
 ```
 
-### Step 3: Prepare Dataset
-The dataset folder should be placed alongside this project:
-```
-parent_folder/
-├── SmartBin_Classifier_DL/     # This project
-├── dataset/                     # Download from Kaggle
-│   └── images/
-│       └── images/
-│           ├── aerosol_cans/
-│           ├── aluminum_food_cans/
-│           └── ... (30 more categories)
-```
-
-**Download dataset from Kaggle:**
-```bash
-kaggle datasets download -d alistairking/recyclable-and-household-waste-classification
-unzip recyclable-and-household-waste-classification.zip
-```
+### Step 3: Download and Place Dataset
+Follow the **Dataset** section above to download and extract dataset
 
 ---
 
