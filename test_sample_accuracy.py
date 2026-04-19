@@ -15,7 +15,28 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 
 # Configuration
-DATASET_PATH = '../dataset/images/images'
+# Handle flexible dataset path - works in both single and multi-root workspaces
+possible_paths = [
+    '../complete_dataset',  # PRIMARY
+    '../dataset/images/images',
+    './complete_dataset',
+    os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'complete_dataset')),
+]
+
+DATASET_PATH = None
+for path in possible_paths:
+    if os.path.exists(path):
+        DATASET_PATH = path
+        break
+
+if DATASET_PATH is None:
+    print("Error: Dataset not found. Tried paths:")
+    for path in possible_paths:
+        print(f"  - {os.path.abspath(path)}")
+    print("\nPlease download the dataset from:")
+    print("https://www.kaggle.com/datasets/alistairking/recyclable-and-household-waste-classification")
+    exit(1)
+
 SAMPLE_SIZE = 500  # Number of test images
 
 WASTE_CLASS_MAPPING = {

@@ -96,14 +96,30 @@ print("SmartBin Waste Classification - Model Training")
 print("="*70)
 
 print("\nLoading dataset...")
-dataset_dir = os.path.join('..', 'dataset', 'images', 'images')
 
-if not os.path.exists(dataset_dir):
-    print(f"Error: Dataset not found at {dataset_dir}")
-    print(f"Current directory: {os.getcwd()}")
+# Handle flexible dataset path - works in both single and multi-root workspaces
+possible_paths = [
+    os.path.join('..', 'complete_dataset'),  # Multi-root workspace - PRIMARY
+    os.path.join('..', 'dataset', 'images', 'images'),  # Fallback
+    os.path.join('.', 'complete_dataset'),   # Same folder
+    os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'complete_dataset')),  # Absolute path
+]
+
+dataset_dir = None
+for path in possible_paths:
+    if os.path.exists(path):
+        dataset_dir = path
+        break
+
+if dataset_dir is None:
+    print("Error: Dataset not found. Tried paths:")
+    for path in possible_paths:
+        print(f"  - {os.path.abspath(path)}")
+    print("\nPlease ensure the dataset is downloaded from:")
+    print("https://www.kaggle.com/datasets/alistairking/recyclable-and-household-waste-classification")
     sys.exit(1)
 
-print(f"Dataset path: {dataset_dir}")
+print(f"Dataset path: {os.path.abspath(dataset_dir)}")
 
 # Define image transformations
 transform = transforms.Compose([

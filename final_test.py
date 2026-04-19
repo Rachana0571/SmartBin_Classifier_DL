@@ -36,9 +36,26 @@ def quick_test():
     }
 
     # Find test images
-    dataset_path = Path('../dataset/images/images')
+    possible_paths = [
+        Path('../complete_dataset'),  # PRIMARY
+        Path('../dataset/images/images'),
+        Path('./complete_dataset'),
+        Path(__file__).parent.parent / 'complete_dataset',
+    ]
+    
+    dataset_path = None
+    for path in possible_paths:
+        if path.exists():
+            dataset_path = path
+            break
+    
+    if dataset_path is None:
+        print("Error: Could not find dataset. Tried paths:")
+        for path in possible_paths:
+            print(f"  - {path.resolve()}")
+        return
+    
     test_images = []
-
     for category, expected_class in WASTE_CLASS_MAPPING.items():
         cat_path = dataset_path / category / 'default'
         if cat_path.exists():
@@ -47,7 +64,7 @@ def quick_test():
                 test_images.append((str(images[0]), category, expected_class))
 
     if not test_images:
-        print("Error: Could not find test images")
+        print("Error: Could not find test images in dataset")
         return
 
     # Run predictions

@@ -10,11 +10,31 @@ from PIL import Image
 from pathlib import Path
 import os
 import random
-from sklearn.metrics import accuracy_score
 
 
 # Configuration
-DATASET_PATH = '../dataset/images/images'
+# Handle flexible dataset path - works in both single and multi-root workspaces
+possible_paths = [
+    '../complete_dataset',  # PRIMARY
+    '../dataset/images/images',
+    './complete_dataset',
+    os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'complete_dataset')),
+]
+
+DATASET_PATH = None
+for path in possible_paths:
+    if os.path.exists(path):
+        DATASET_PATH = path
+        break
+
+if DATASET_PATH is None:
+    print("Error: Dataset not found. Tried paths:")
+    for path in possible_paths:
+        print(f"  - {os.path.abspath(path)}")
+    print("\nPlease download the dataset from:")
+    print("https://www.kaggle.com/datasets/alistairking/recyclable-and-household-waste-classification")
+    exit(1)
+
 SAMPLE_SIZE = 300
 
 WASTE_CLASS_MAPPING = {
@@ -137,7 +157,12 @@ def evaluate_model(model_path, model_name, device):
             except:
                 pass
     
-    accuracy = accuracy_score(all_labels, all_preds) if all_labels else 0
+    # Calculate accuracy without sklearn dependency
+    if all_labels:
+        correct = sum(p == l for p, l in zip(all_preds, all_labels))
+        accuracy = correct / len(all_labels)
+    else:
+        accuracy = 0
     print(f"Accuracy: {accuracy*100:.2f}%")
     
     return accuracy
